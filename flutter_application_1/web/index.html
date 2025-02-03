@@ -31,6 +31,25 @@
 
   <title>flutter_application_1</title>
   <link rel="manifest" href="manifest.json">
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBEHkd80yTRjIdRtfeL8nqDDkv3jLvoDlk"></script>
+  <div id="map" style="height: 500px; width: 100%;"></div>
+
+  <script>
+      function initMap() {
+          var localizacao = { lat: -23.55052, lng: -46.633308 }; // São Paulo
+          var map = new google.maps.Map(document.getElementById("map"), {
+              zoom: 10,
+              center: localizacao
+          });
+          var marker = new google.maps.Marker({
+              position: localizacao,
+              map: map
+          });
+      }
+      
+      window.onload = initMap;
+  </script>
+
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
