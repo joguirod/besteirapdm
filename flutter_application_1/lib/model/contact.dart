@@ -1,13 +1,18 @@
 class Contact {
-  final int? id;
-  final String name;
-  final double latitude;
-  final double longitude;
+  int? id; // Agora não é mais final, permitindo edição
+  String name;
+  double latitude;
+  double longitude;
 
   Contact({this.id, required this.name, required this.latitude, required this.longitude});
 
   Map<String, dynamic> toMap() {
-    return {'id': id, 'name': name, 'latitude': latitude, 'longitude': longitude};
+    return {
+      'id': id,
+      'name': name,
+      'latitude': latitude,
+      'longitude': longitude,
+    };
   }
 
   factory Contact.fromMap(Map<String, dynamic> map) {

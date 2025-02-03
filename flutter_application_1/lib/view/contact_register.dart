@@ -3,25 +3,44 @@ import '../database/database_helper.dart';
 import '../model/contact.dart';
 
 class ContactRegisterView extends StatefulWidget {
-  const ContactRegisterView({super.key});
+  final Contact? contact;
+  const ContactRegisterView({super.key, this.contact});
 
   @override
   _ContactRegisterViewState createState() => _ContactRegisterViewState();
 }
 
 class _ContactRegisterViewState extends State<ContactRegisterView> {
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _latitudeController = TextEditingController();
-  final TextEditingController _longitudeController = TextEditingController();
+  late TextEditingController _nameController;
+  late TextEditingController _latitudeController;
+  late TextEditingController _longitudeController;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.contact?.name ?? "");
+    _latitudeController = TextEditingController(text: widget.contact?.latitude?.toString() ?? "");
+    _longitudeController = TextEditingController(text: widget.contact?.longitude?.toString() ?? "");
+  }
 
   Future<void> _saveContact() async {
-    final String name = _nameController.text;
-    final double? latitude = double.tryParse(_latitudeController.text);
-    final double? longitude = double.tryParse(_longitudeController.text);
+    String name = _nameController.text;
+    double? latitude = double.tryParse(_latitudeController.text);
+    double? longitude = double.tryParse(_longitudeController.text);
 
     if (name.isNotEmpty && latitude != null && longitude != null) {
-      Contact newContact = Contact(name: name, latitude: latitude, longitude: longitude);
-      await DatabaseHelper.instance.insertContact(newContact);
+      Contact newContact = Contact(
+        id: widget.contact?.id, // Mantém o ID se for uma edição
+        name: name,
+        latitude: latitude,
+        longitude: longitude,
+      );
+
+      if (widget.contact == null) {
+        await DatabaseHelper.instance.insertContact(newContact);
+      } else {
+        await DatabaseHelper.instance.updateContact(newContact);
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Contato salvo!')));
       Navigator.pop(context);

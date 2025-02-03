@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io' show Platform; // Para verificar se é Android/iOS
 import 'package:flutter/foundation.dart' show kIsWeb; // Para verificar se é Web
 import '../model/user.dart';
-import '../model/contact.dart'; // Importamos a classe Contact
+import '../model/contact.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._internal();
@@ -52,110 +52,99 @@ class DatabaseHelper {
   }
 
   // ==========================
-  // 📌 Gerenciamento de Usuários
+  // Gerenciamento de Usuários
   // ==========================
 
-  Future<void> insertUser(User user) async {
-    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      final db = await database;
-      await db?.insert('users', user.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
-    } else {
-      final prefs = await SharedPreferences.getInstance();
-      List<String> users = prefs.getStringList('users') ?? [];
-
-      if (!users.contains(user.email)) {
-        users.add(user.email);
-        await prefs.setStringList('users', users);
-        await prefs.setString('password_${user.email}', user.password);
-      }
+  /// Insere um novo usuário no banco de dados
+  Future<int?> insertUser(User user) async {
+    final db = await database;
+    if (db == null) {
+      return null;
     }
+    return await db.insert(
+      'users',
+      user.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
+  /// Busca um usuário pelo email
   Future<User?> getUser(String email) async {
-    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      final db = await database;
-      if (db == null) return null;
+    final db = await database;
+    if (db == null) {
+      return null;
+    }
 
-      final result = await db.query('users', where: 'email = ?', whereArgs: [email]);
-      if (result.isNotEmpty) {
-        return User.fromMap(result.first);
-      }
-    } else {
-      final prefs = await SharedPreferences.getInstance();
-      String? password = prefs.getString('password_$email');
-      if (password != null) {
-        return User(email: email, password: password);
-      }
+    final result = await db.query(
+      'users',
+      where: 'email = ?',
+      whereArgs: [email],
+    );
+
+    if (result.isNotEmpty) {
+      return User.fromMap(result.first);
     }
     return null;
   }
 
+  /// Retorna todos os usuários cadastrados
   Future<List<User>> getAllUsers() async {
-    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      final db = await database;
-      if (db == null) return [];
-
-      final result = await db.query('users');
-      if (result.isNotEmpty) {
-        return result.map((map) => User.fromMap(map)).toList();
-      }
-    } else {
-      final prefs = await SharedPreferences.getInstance();
-      List<String> users = prefs.getStringList('users') ?? [];
-
-      return users.map((email) {
-        String? password = prefs.getString('password_$email');
-        if (password != null) {
-          return User(email: email, password: password);
-        }
-        return null;
-      }).whereType<User>().toList();
+    final db = await database;
+    if (db == null) {
+      return [];
     }
-    return [];
+
+    final result = await db.query('users');
+    return result.map((map) => User.fromMap(map)).toList();
   }
 
   // ==========================
-  // 📌 Gerenciamento de Contatos
+  //  Gerenciamento de Contatos
   // ==========================
 
-  /// Insere um novo contato no banco
-  Future<void> insertContact(Contact contact) async {
-    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      final db = await database;
-      await db?.insert('contacts', contact.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
-    } else {
-      final prefs = await SharedPreferences.getInstance();
-      List<String> contacts = prefs.getStringList('contacts') ?? [];
-
-      String contactData = "${contact.name},${contact.latitude},${contact.longitude}";
-      contacts.add(contactData);
-      await prefs.setStringList('contacts', contacts);
+  /// Insere um novo contato
+  Future<int?> insertContact(Contact contact) async {
+    final db = await database;
+    if (db == null) {
+      return null;
     }
+    return await db.insert('contacts', contact.toMap());
   }
 
-  /// Obtém todos os contatos cadastrados
+  /// Retorna todos os contatos
   Future<List<Contact>> getAllContacts() async {
-    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      final db = await database;
-      if (db == null) return [];
-
-      final result = await db.query('contacts');
-      return result.map((map) => Contact.fromMap(map)).toList();
-    } else {
-      final prefs = await SharedPreferences.getInstance();
-      List<String> contacts = prefs.getStringList('contacts') ?? [];
-
-      return contacts.map((contactData) {
-        List<String> data = contactData.split(',');
-        if (data.length == 3) {
-          return Contact(
-            name: data[0],
-            latitude: double.parse(data[1]),
-            longitude: double.parse(data[2]),
-          );
-        }
-        return null;
-      }).whereType<Contact>().toList();
+    final db = await database;
+    if (db == null) {
+      return [];
     }
+    final result = await db.query('contacts');
+    return result.map((json) => Contact.fromMap(json)).toList();
+  }
+
+  /// Atualiza um contato existente
+  Future<int?> updateContact(Contact contact) async {
+    final db = await database;
+    if (db == null) {
+      return null;
+    }
+    return await db.update(
+      'contacts',
+      contact.toMap(),
+      where: 'id = ?',
+      whereArgs: [contact.id],
+    );
+  }
+
+  /// Deleta um contato pelo ID
+  Future<int?> deleteContact(int id) async {
+    final db = await database;
+    if (db == null) {
+      return null;
+    }
+    return await db.delete(
+      'contacts',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 }
